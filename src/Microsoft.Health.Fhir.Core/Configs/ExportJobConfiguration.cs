@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Health.Fhir.TemplateManagement.Models;
 
 namespace Microsoft.Health.Fhir.Core.Configs
 {
@@ -46,6 +47,16 @@ namespace Microsoft.Health.Fhir.Core.Configs
         /// Number of pages to be iterated before committing the export progress.
         /// </summary>
         public uint NumberOfPagesPerCommit { get; set; } = 10;
+
+        /// <summary>
+        /// Configuration for templates.
+        /// </summary>
+        public TemplateCollectionConfiguration TemplateCollectionOptions { get; set; } = new TemplateCollectionConfiguration();
+
+        /// <summary>
+        /// Cache size limit for de-id export. Size of each cache entry are calculated by byte counts.
+        /// </summary>
+        public long CacheSizeLimit { get; set; } = 10_000_000;
 
         /// <summary>
         /// Formats for export jobs.

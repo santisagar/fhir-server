@@ -12,6 +12,7 @@ using Microsoft.Health.Fhir.Api.Configs;
 using Microsoft.Health.Fhir.Api.Controllers;
 using Microsoft.Health.Fhir.Core.Configs;
 using Microsoft.Health.Fhir.Core.Exceptions;
+using Microsoft.Health.Fhir.Core.Features.ArtifactStore;
 using Microsoft.Health.Fhir.Core.Features.Context;
 using Microsoft.Health.Fhir.Core.Features.Routing;
 using NSubstitute;
@@ -26,16 +27,23 @@ namespace Microsoft.Health.Fhir.Api.UnitTests.Controllers
         private IMediator _mediator = Substitute.For<IMediator>();
         private RequestContextAccessor<IFhirRequestContext> _fhirRequestContextAccessor = Substitute.For<RequestContextAccessor<IFhirRequestContext>>();
         private IUrlResolver _urlResolver = Substitute.For<IUrlResolver>();
+        private static ArtifactStoreConfiguration _artifactStoreConfig = new ArtifactStoreConfiguration();
+        private static FeatureConfiguration _featureConfiguration = new FeatureConfiguration();
+        private static FeatureConfiguration _anonymizationEnabledFeatureConfiguration = new FeatureConfiguration() { SupportsAnonymizedExport = true };
+        private static ExportJobConfiguration _exportEnabledJobConfiguration = new ExportJobConfiguration() { Enabled = true };
+
+        private const string _testContainer = "testContainer";
+        private const string _testConfig = "testConfig";
 
         public ExportControllerTests()
         {
-            _exportEnabledController = GetController(new ExportJobConfiguration() { Enabled = true });
+            _exportEnabledController = GetController(_exportEnabledJobConfiguration, _featureConfiguration, _artifactStoreConfig);
         }
 
         [Fact]
         public async Task GivenAnExportRequest_WhenDisabled_ThenRequestNotValidExceptionShouldBeThrown()
         {
-            var exportController = GetController(new ExportJobConfiguration() { Enabled = false });
+            var exportController = GetController(new ExportJobConfiguration() { Enabled = false }, _featureConfiguration, _artifactStoreConfig);
 
             await Assert.ThrowsAsync<RequestNotValidException>(() => exportController.Export(
                 typeFilter: null,
@@ -43,6 +51,7 @@ namespace Microsoft.Health.Fhir.Api.UnitTests.Controllers
                 resourceType: null,
                 containerName: null,
                 formatName: null,
+                anonymizationConfigCollectionReference: null,
                 anonymizationConfigLocation: null,
                 anonymizationConfigFileETag: null));
         }
@@ -50,7 +59,7 @@ namespace Microsoft.Health.Fhir.Api.UnitTests.Controllers
         [Fact]
         public async Task GivenAnExportByResourceTypeRequest_WhenDisabled_ThenRequestNotValidExceptionShouldBeThrown()
         {
-            var exportController = GetController(new ExportJobConfiguration() { Enabled = false });
+            var exportController = GetController(new ExportJobConfiguration() { Enabled = false }, _featureConfiguration, _artifactStoreConfig);
 
             await Assert.ThrowsAsync<RequestNotValidException>(() => exportController.ExportResourceType(
                 typeFilter: null,
@@ -58,6 +67,7 @@ namespace Microsoft.Health.Fhir.Api.UnitTests.Controllers
                 resourceType: null,
                 containerName: null,
                 formatName: null,
+                anonymizationConfigCollectionReference: null,
                 anonymizationConfigLocation: null,
                 anonymizationConfigFileETag: null,
                 typeParameter: ResourceType.Patient.ToString()));
@@ -66,7 +76,7 @@ namespace Microsoft.Health.Fhir.Api.UnitTests.Controllers
         [Fact]
         public async Task GivenAnExportByIdRequest_WhenDisabled_ThenRequestNotValidExceptionShouldBeThrown()
         {
-            var exportController = GetController(new ExportJobConfiguration() { Enabled = false });
+            var exportController = GetController(new ExportJobConfiguration() { Enabled = false }, _featureConfiguration, _artifactStoreConfig);
 
             await Assert.ThrowsAsync<RequestNotValidException>(() => exportController.ExportResourceTypeById(
                 typeFilter: null,
@@ -74,6 +84,7 @@ namespace Microsoft.Health.Fhir.Api.UnitTests.Controllers
                 resourceType: null,
                 containerName: null,
                 formatName: null,
+                anonymizationConfigCollectionReference: null,
                 anonymizationConfigLocation: null,
                 anonymizationConfigFileETag: null,
                 typeParameter: ResourceType.Group.ToString(),
@@ -89,6 +100,7 @@ namespace Microsoft.Health.Fhir.Api.UnitTests.Controllers
                 resourceType: null,
                 containerName: null,
                 formatName: null,
+                anonymizationConfigCollectionReference: null,
                 anonymizationConfigLocation: null,
                 anonymizationConfigFileETag: null,
                 typeParameter: ResourceType.Observation.ToString()));
@@ -103,6 +115,7 @@ namespace Microsoft.Health.Fhir.Api.UnitTests.Controllers
                 resourceType: null,
                 containerName: null,
                 formatName: null,
+                anonymizationConfigCollectionReference: null,
                 anonymizationConfigLocation: null,
                 anonymizationConfigFileETag: null,
                 typeParameter: ResourceType.Patient.ToString(),
@@ -114,12 +127,15 @@ namespace Microsoft.Health.Fhir.Api.UnitTests.Controllers
         {
             string anonymizationConfig = "anonymizationConfig";
 
-            await Assert.ThrowsAsync<RequestNotValidException>(() => _exportEnabledController.ExportResourceTypeById(
+            var exportController = GetController(_exportEnabledJobConfiguration, _anonymizationEnabledFeatureConfiguration, _artifactStoreConfig);
+
+            await Assert.ThrowsAsync<RequestNotValidException>(() => exportController.ExportResourceTypeById(
                 typeFilter: null,
                 since: null,
                 resourceType: null,
                 containerName: null,
                 formatName: null,
+                anonymizationConfigCollectionReference: null,
                 anonymizationConfigLocation: anonymizationConfig,
                 anonymizationConfigFileETag: null,
                 typeParameter: ResourceType.Patient.ToString(),
@@ -127,23 +143,57 @@ namespace Microsoft.Health.Fhir.Api.UnitTests.Controllers
         }
 
         [Fact]
-        public async Task GivenAnExportRequestWithAnonymizationConfigEtag_WhenNoAnonymizationConfig_ThenRequestNotValidExceptionShouldBeThrown()
+        public async Task GivenAnAnonymizedExportRequestWithAnonymizationConfigEtag_WhenNoAnonymizationConfig_ThenRequestNotValidExceptionShouldBeThrown()
         {
             string anonymizationConfigEtag = "anonymizationConfigEtag";
 
-            await Assert.ThrowsAsync<RequestNotValidException>(() => _exportEnabledController.ExportResourceTypeById(
+            var exportController = GetController(_exportEnabledJobConfiguration, _anonymizationEnabledFeatureConfiguration, _artifactStoreConfig);
+
+            await Assert.ThrowsAsync<RequestNotValidException>(() => exportController.ExportResourceTypeById(
                 typeFilter: null,
                 since: null,
                 resourceType: null,
                 containerName: null,
                 formatName: null,
+                anonymizationConfigCollectionReference: null,
                 anonymizationConfigLocation: null,
                 anonymizationConfigFileETag: anonymizationConfigEtag,
                 typeParameter: ResourceType.Patient.ToString(),
                 idParameter: "id"));
         }
 
-        private ExportController GetController(ExportJobConfiguration exportConfig)
+        [Theory]
+        [InlineData(null, null, null, "abc.azurecr.io/template:123")]
+        [InlineData("abc.azurecr.io", null, null, "dummy.azurecr.io/template:123")]
+        [InlineData("abc.azurecr.io", "template", null, "abc.azurecr.io/convertertemplate:123")]
+        [InlineData("abc.azurecr.io", "template", "sha256:123", "abc.azurecr.io/template:123")]
+        [InlineData("abc.azurecr.io", "template", "sha256:2ae21c6e33deb90f105982404c867671da624deda7dff364107ec8c2910b4992", "abc.azurecr.io/template1@sha256:1ae21c6e33deb90f105982404c867671da624deda7dff364107ec8c2910b4992")]
+        public async Task GivenAnAnonymizedExportRequestWithoutConfiguredImage_WhenValidBodySent_ThenContainerRegistryNotConfiguredExceptionShouldBeThrown(string loginServer, string imageName, string digest, string anonymizationConfigCollectionReference)
+        {
+            var ociArtifactInfo = new OciArtifactInfo
+            {
+                LoginServer = loginServer,
+                ImageName = imageName,
+                Digest = digest,
+            };
+            var artifactConfig = new ArtifactStoreConfiguration();
+            artifactConfig.OciArtifacts.Add(ociArtifactInfo);
+            var exportController = GetController(_exportEnabledJobConfiguration, _anonymizationEnabledFeatureConfiguration, _artifactStoreConfig);
+
+            await Assert.ThrowsAsync<RequestNotValidException>(() => exportController.ExportResourceTypeById(
+                typeFilter: null,
+                since: null,
+                resourceType: null,
+                containerName: _testContainer,
+                formatName: null,
+                anonymizationConfigCollectionReference: anonymizationConfigCollectionReference,
+                anonymizationConfigLocation: _testConfig,
+                anonymizationConfigFileETag: null,
+                typeParameter: ResourceType.Patient.ToString(),
+                idParameter: "id"));
+        }
+
+        private ExportController GetController(ExportJobConfiguration exportConfig, FeatureConfiguration features, ArtifactStoreConfiguration artifactStoreConfig)
         {
             var operationConfig = new OperationsConfiguration()
             {
@@ -153,7 +203,9 @@ namespace Microsoft.Health.Fhir.Api.UnitTests.Controllers
             IOptions<OperationsConfiguration> optionsOperationConfiguration = Substitute.For<IOptions<OperationsConfiguration>>();
             optionsOperationConfiguration.Value.Returns(operationConfig);
 
-            var features = new FeatureConfiguration();
+            IOptions<ArtifactStoreConfiguration> optionsArtifactStoreConfiguration = Substitute.For<IOptions<ArtifactStoreConfiguration>>();
+            optionsArtifactStoreConfiguration.Value.Returns(artifactStoreConfig);
+
             IOptions<FeatureConfiguration> optionsFeatures = Substitute.For<IOptions<FeatureConfiguration>>();
             optionsFeatures.Value.Returns(features);
 
@@ -162,6 +214,7 @@ namespace Microsoft.Health.Fhir.Api.UnitTests.Controllers
                 _fhirRequestContextAccessor,
                 _urlResolver,
                 optionsOperationConfiguration,
+                optionsArtifactStoreConfiguration,
                 optionsFeatures,
                 NullLogger<ExportController>.Instance);
         }

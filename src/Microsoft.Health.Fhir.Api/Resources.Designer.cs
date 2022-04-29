@@ -19,7 +19,7 @@ namespace Microsoft.Health.Fhir.Api {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Resources {
@@ -57,6 +57,24 @@ namespace Microsoft.Health.Fhir.Api {
             }
             set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The configuration collection reference &apos;{0}&apos; is not configured..
+        /// </summary>
+        public static string AnonymizationConfigCollectionNotConfigured {
+            get {
+                return ResourceManager.GetString("AnonymizationConfigCollectionNotConfigured", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The parameters &apos;_anonymizationConfigEtag&apos; and &apos;_anonymizationConfigCollectionReference&apos; cannot be given in the same request. Please only specify one of them..
+        /// </summary>
+        public static string AnonymizationParameterConflict {
+            get {
+                return ResourceManager.GetString("AnonymizationParameterConflict", resourceCulture);
             }
         }
         
@@ -246,6 +264,15 @@ namespace Microsoft.Health.Fhir.Api {
         public static string InputDataTypeAndDefaultTemplateCollectionInconsistent {
             get {
                 return ResourceManager.GetString("InputDataTypeAndDefaultTemplateCollectionInconsistent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The configuration collection reference &apos;{0}&apos; is invalid..
+        /// </summary>
+        public static string InvalidAnonymizationConfigCollectionReference {
+            get {
+                return ResourceManager.GetString("InvalidAnonymizationConfigCollectionReference", resourceCulture);
             }
         }
         
